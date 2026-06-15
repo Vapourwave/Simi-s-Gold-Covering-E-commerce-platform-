@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+
+  /* Redefine Stone scale to luxurious deep Violet Velvet Cloth shades */
+  --color-stone-50: #fbf9fd;
+  --color-stone-100: #faf8fc;
+  --color-stone-150: #f0e9f7;
+  --color-stone-200: #e3d8f0;
+  --color-stone-250: #d6cae7;
+  --color-stone-300: #bca3d6;
+  --color-stone-400: #9d7cb8;
+  --color-stone-500: #8056a9;
+  --color-stone-600: #643e88;
+  --color-stone-700: #512f70;
+  --color-stone-750: #42255c;
+  --color-stone-800: #341b4b;
+  --color-stone-850: #29143d;
+  --color-stone-900: #1e0e2e;
+  --color-stone-950: #12071d;
+}
+
+/* Custom scrollbars inside our luxurious violet velvet e-commerce layout */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #12071d;
+}
+::-webkit-scrollbar-thumb {
+  background: #29143d;
+  border-radius: 9px;
+  border: 1px solid #42255c;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #fbbf24;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 15s linear infinite;
+}

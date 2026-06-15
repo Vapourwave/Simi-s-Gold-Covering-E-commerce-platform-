@@ -1,0 +1,268 @@
+{
+  "entities": {
+    "product": {
+      "title": "Product",
+      "description": "Premium jewelry ornament item in Simi's Catalog Store",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique product identification token"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the jewelry item"
+        },
+        "tamilName": {
+          "type": "string",
+          "description": "Sanskrit or Tamil translation subtitle"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["vala", "kolus", "mala_necklace", "earrings"]
+        },
+        "categoryLabel": {
+          "type": "string",
+          "description": "Readable display name of the category"
+        },
+        "variety": {
+          "type": "string",
+          "description": "Specific under-model sub-variety classification"
+        },
+        "price": {
+          "type": "number",
+          "description": "Discounted current offer price in INR"
+        },
+        "originalPrice": {
+          "type": "number",
+          "description": "Standard list price before discount in INR"
+        },
+        "images": {
+          "type": "array",
+          "description": "List of high-fidelity preview image absolute URLs"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed marketing copy descriptive summary"
+        },
+        "details": {
+          "type": "array",
+          "description": "Specific material properties, dimensions or polishing criteria bullet points"
+        },
+        "isBestSeller": {
+          "type": "boolean",
+          "description": "Marks this ornament as a highly-coveted customer choice"
+        },
+        "isNewArrival": {
+          "type": "boolean",
+          "description": "Marks this as a freshly arrived collection"
+        },
+        "isCustomizable": {
+          "type": "boolean",
+          "description": "Determines whether custom measurements or custom castings can be requested"
+        },
+        "material": {
+          "type": "string",
+          "enum": ["gold_covering", "gold_covering_on_silver", "silver", "white_gold"]
+        },
+        "rating": {
+          "type": "number",
+          "description": "Aggregated user review rating score out of 5 stars"
+        },
+        "reviewsCount": {
+          "type": "number",
+          "description": "Total number of review submissions received"
+        },
+        "stockCount": {
+          "type": "number",
+          "description": "Current inventory status in physical counts"
+        },
+        "sizes": {
+          "type": "array",
+          "description": "Standard gauge metrics available for order selection"
+        },
+        "arrivalDate": {
+          "type": "string",
+          "description": "Formatted date text string defining arrival timing"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "category",
+        "categoryLabel",
+        "variety",
+        "price",
+        "originalPrice",
+        "images",
+        "description",
+        "details",
+        "isBestSeller",
+        "isNewArrival",
+        "isCustomizable",
+        "material",
+        "rating",
+        "reviewsCount",
+        "stockCount"
+      ]
+    },
+    "admin_config": {
+      "title": "Admin Config",
+      "description": "Stores secure settings such as the administrator auth passcode",
+      "type": "object",
+      "properties": {
+        "passcode": {
+          "type": "string",
+          "description": "Passcode string evaluated server-side"
+        }
+      },
+      "required": ["passcode"]
+    },
+    "banned_ip": {
+      "title": "Banned IP",
+      "description": "IP addresses restricted from website access due to multiple unauthorized attempts",
+      "type": "object",
+      "properties": {
+        "ip": {
+          "type": "string"
+        },
+        "bannedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string"
+        },
+        "device": {
+          "type": "string"
+        }
+      },
+      "required": ["ip", "bannedAt"]
+    },
+    "failed_attempt": {
+      "title": "Failed Attempt",
+      "description": "Tracks count of failed passcode trials per IP",
+      "type": "object",
+      "properties": {
+        "ip": {
+          "type": "string"
+        },
+        "failedCount": {
+          "type": "number"
+        },
+        "lastAttemptAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ip", "failedCount", "lastAttemptAt"]
+    },
+    "security_notification": {
+      "title": "Security Notification",
+      "description": "Event log containing information on unauthorized activities, locations, and timings",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "ip": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string"
+        },
+        "device": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "banned": {
+          "type": "boolean"
+        },
+        "failedCount": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "ip", "timestamp", "location", "device", "type", "banned"]
+    },
+    "user": {
+      "title": "User",
+      "description": "User profile with optional contact details and default delivery address",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "defaultAddress": {
+          "type": "object",
+          "properties": {
+            "address": { "type": "string" },
+            "city": { "type": "string" },
+            "pincode": { "type": "string" },
+            "district": { "type": "string" },
+            "state": { "type": "string" }
+          }
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "order_request": {
+      "title": "Order Request",
+      "description": "Information about a requested order booking made via WhatsApp checkout, awaiting admin action",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhone": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "subtotal": { "type": "number" },
+        "discountVal": { "type": "number" },
+        "promoCode": { "type": "string" },
+        "shippingCost": { "type": "number" },
+        "address": { "type": "object" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userName", "items", "total", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "product",
+      "description": "Central collection storing and serving persistent boutique products"
+    },
+    "/metadata/admin_config": {
+      "schema": "admin_config",
+      "description": "Secure document storing the master administrative PIN"
+    },
+    "/banned_ips/{ip}": {
+      "schema": "banned_ip",
+      "description": "IP block ledger with unban capabilities"
+    },
+    "/failed_attempts/{ip}": {
+      "schema": "failed_attempt",
+      "description": "Failure counters supporting locking gates"
+    },
+    "/security_notifications/{notificationId}": {
+      "schema": "security_notification",
+      "description": "Airtight security audit log entries visible to administrators"
+    },
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "Persistent profiles of jewelry buyers and their defaults"
+    },
+    "/order_requests/{orderRequestId}": {
+      "schema": "order_request",
+      "description": "Interactive pending orders placed by customers awaiting confirmation"
+    }
+  }
+}

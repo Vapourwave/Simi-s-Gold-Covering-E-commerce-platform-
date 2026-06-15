@@ -1,0 +1,6 @@
+{
+  "name": "Simi's Gold Covering",
+  "description": "Elegant premium gold covering and silver Indian jewelry e-commerce store featuring Kolus, Mala, Necklaces, Vala / Bangles, Kayi Chains, Earrings, and Custom Designs with sliding image showcases, price sorting, and smart collection views.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

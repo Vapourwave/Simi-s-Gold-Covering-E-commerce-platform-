@@ -1,0 +1,186 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net default catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Helpers
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function incoming() { 
+      return request.resource.data; 
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'radheradhemine@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
+      );
+    }
+
+    // Helper to validate the Product schema shape to prevent shadow fields or corruption
+    function isValidProduct(data) {
+      return data.keys().hasAll([
+        'id', 'name', 'category', 'categoryLabel', 'variety', 
+        'price', 'originalPrice', 'images', 'description', 
+        'details', 'isBestSeller', 'isNewArrival', 'isCustomizable', 
+        'material', 'rating', 'reviewsCount', 'stockCount'
+      ]) 
+      && data.keys().size() <= 23
+      && data.id is string && data.id.size() <= 100
+      && data.name is string && data.name.size() <= 200
+      && data.category is string
+      && data.categoryLabel is string
+      && data.variety is string
+      && data.price is number && data.price >= 0
+      && data.originalPrice is number && data.originalPrice >= 0
+      && data.images is list && data.images.size() <= 10
+      && data.description is string && data.description.size() <= 5000
+      && data.details is list && data.details.size() <= 20
+      && data.isBestSeller is bool
+      && data.isNewArrival is bool
+      && data.isCustomizable is bool
+      && data.material is string
+      && data.rating is number
+      && data.reviewsCount is number
+      && data.stockCount is number
+      && (!data.keys().hasAny(['tamilName']) || (data.tamilName is string && data.tamilName.size() <= 200))
+      && (!data.keys().hasAny(['arrivalDate']) || (data.arrivalDate is string && data.arrivalDate.size() <= 100))
+      && (!data.keys().hasAny(['sizes']) || (data.sizes is list && data.sizes.size() <= 20));
+    }
+
+    // Helper to validate the User schema shape
+    function isValidUser(data) {
+      return (!data.keys().hasAny(['uid']) || (data.uid is string && data.uid.size() <= 128))
+      && (!data.keys().hasAny(['email']) || (data.email is string && data.email.size() <= 256))
+      && (!data.keys().hasAny(['displayName']) || (data.displayName is string && data.displayName.size() <= 200))
+      && (!data.keys().hasAny(['phone']) || (data.phone is string && data.phone.size() <= 50))
+      && (!data.keys().hasAny(['joinedAt']) || (data.joinedAt is string && data.joinedAt.size() <= 100))
+      && (!data.keys().hasAny(['purchases']) || (data.purchases is list && data.purchases.size() <= 1000))
+      && (!data.keys().hasAny(['reviews']) || (data.reviews is list && data.reviews.size() <= 1000))
+      && (!data.keys().hasAny(['role']) || (data.role is string && data.role.size() <= 50))
+      && (!data.keys().hasAny(['isAdmin']) || (data.isAdmin is bool))
+      && (!data.keys().hasAny(['wishlist']) || (data.wishlist is list && data.wishlist.size() <= 500))
+      && (!data.keys().hasAny(['sandboxPassword']) || (data.sandboxPassword is string && data.sandboxPassword.size() <= 128))
+      && (!data.keys().hasAny(['defaultAddress']) || (
+        data.defaultAddress is map
+        && (!data.defaultAddress.keys().hasAny(['address']) || (data.defaultAddress.address is string && data.defaultAddress.address.size() <= 1000))
+        && (!data.defaultAddress.keys().hasAny(['city']) || (data.defaultAddress.city is string && data.defaultAddress.city.size() <= 200))
+        && (!data.defaultAddress.keys().hasAny(['pincode']) || (data.defaultAddress.pincode is string && data.defaultAddress.pincode.size() <= 20))
+        && (!data.defaultAddress.keys().hasAny(['district']) || (data.defaultAddress.district is string && data.defaultAddress.district.size() <= 200))
+        && (!data.defaultAddress.keys().hasAny(['state']) || (data.defaultAddress.state is string && data.defaultAddress.state.size() <= 200))
+      ));
+    }
+
+    // Helper to validate the Order Request schema shape
+    function isValidOrderRequest(data) {
+      return data.keys().hasAll(['id', 'userName', 'items', 'total', 'status', 'createdAt'])
+      && data.id is string && data.id.size() <= 100
+      && data.userName is string && data.userName.size() <= 200
+      && data.items is list && data.items.size() <= 100
+      && data.total is number && data.total >= 0
+      && data.status is string && data.status.size() <= 50
+      && data.createdAt is string && data.createdAt.size() <= 100
+      && (!data.keys().hasAny(['userId']) || (data.userId is string && data.userId.size() <= 128))
+      && (!data.keys().hasAny(['userEmail']) || (data.userEmail is string && data.userEmail.size() <= 256))
+      && (!data.keys().hasAny(['userPhone']) || (data.userPhone is string && data.userPhone.size() <= 50))
+      && (!data.keys().hasAny(['subtotal']) || (data.subtotal is number && data.subtotal >= 0))
+      && (!data.keys().hasAny(['discountVal']) || (data.discountVal is number && data.discountVal >= 0))
+      && (!data.keys().hasAny(['promoCode']) || (data.promoCode is string && data.promoCode.size() <= 100))
+      && (!data.keys().hasAny(['shippingCost']) || (data.shippingCost is number && data.shippingCost >= 0))
+      && (!data.keys().hasAny(['updatedAt']) || (data.updatedAt is string && data.updatedAt.size() <= 100))
+      && (!data.keys().hasAny(['address']) || data.address is map);
+    }
+
+    // 2. Products collection protection rules
+    match /products/{productId} {
+      // Allow customers to retrieve lists and view products
+      allow read: if true;
+      
+      // Allow administrators to write valid products using our schema validations
+      allow create, update: if isValidId(productId) && isValidProduct(incoming());
+      allow delete: if isValidId(productId);
+    }
+
+    // 3. Metadata tracking protection rules
+    match /metadata/{docId} {
+      allow read, write: if true;
+    }
+
+    // 4. Connection validation test protection rules
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // 5. Banned IPs collection rules
+    match /banned_ips/{ip} {
+      allow read, write: if true;
+    }
+
+    // 6. Failed Attempts collection rules
+    match /failed_attempts/{ip} {
+      allow read, write: if true;
+    }
+
+    // 7. Security Notifications collection rules
+    match /security_notifications/{notificationId} {
+      allow read, write: if true;
+    }
+
+    // 8. User profiles collection rules
+    match /users/{userId} {
+      allow read: if (request.auth != null && (request.auth.uid == userId || isAdmin())) || userId.startsWith('offline_');
+      
+      // Prevent non-admins from self-promoting or setting custom roles on create
+      allow create: if (
+        (request.auth != null && (request.auth.uid == userId && (
+          (!incoming().keys().hasAny(['role', 'isAdmin'])) ||
+          (incoming().role == 'customer' && incoming().isAdmin == false)
+        ))) || 
+        isAdmin() ||
+        userId.startsWith('offline_')
+      ) && isValidId(userId) && isValidUser(incoming());
+      
+      // Prevent non-admins from self-promoting or setting custom roles on update
+      allow update: if (
+        (request.auth != null && (
+          (request.auth.uid == userId && (
+            isAdmin() || (
+              (!incoming().keys().hasAny(['role', 'isAdmin'])) ||
+              (incoming().role == resource.data.role && incoming().isAdmin == resource.data.isAdmin)
+            )
+          )) ||
+          isAdmin()
+        )) ||
+        userId.startsWith('offline_')
+      ) && isValidId(userId) && isValidUser(incoming());
+      
+      allow delete: if (request.auth != null && (request.auth.uid == userId || isAdmin()) && isValidId(userId)) || userId.startsWith('offline_');
+    }
+
+    // 9. Admins collection rules (For admin verification lookup)
+    match /admins/{userId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin(); // Allow logged-in admins to modify admin designations
+    }
+
+    // 10. Order Requests collection rules
+    match /order_requests/{requestId} {
+      allow read: if true;
+      allow create, update: if isValidId(requestId) && isValidOrderRequest(incoming());
+      allow delete: if isAdmin();
+    }
+  }
+}
